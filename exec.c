@@ -1,71 +1,116 @@
-#include <sys/types.h>
-#include <sys/wait.h>
 #include "main.h"
+
 /**
- * launcher - takes a list of arguments
- * and forks the current process
- * @args: the list of arguments
- *
- * Return: 1 on failure
+ * execute - A function that executes a command.
+ * @command: The pointer to tokienized command
+ * @name: The name of the shell.
+ * @env: The pointer to the enviromental variables.
+ * @cicles: Number of executed cicles.
+ * Return: Nothing.
  */
-
-
-
-int launcher(char **args, char **env)
+void execute(char **command, char *name, char **env, int cicles)
 {
-	pid_t pid, wpid;
-	int status;
+	char **pathways = NULL, *full_path = NULL;
+	struct stat st;
+	unsigned int i = 0;
 
-	if (strcmp(args[0], "exit") == 0)
-		return (0);
-
-	pid = fork();
-	if (pid == 0)
-	{/* Child process */
-		if (execve(args[0], args, env) == -1)
+	if (_strcmp(command[0], "env") != 0)
+		print_env(env);
+	if (stat(command[0], &st) == 0)
+	{
+		if (execve(command[0], command, env) < 0)
 		{
-			perror("execve error");
-			exit(EXIT_FAILURE);
+			perror(name);
+			free_exit(command);
 		}
-	} else if (pid < 0)
-		perror("Error forking");/* Error forking */
+	}
 	else
 	{
-		do {/* Parent process */
-			wpid = waitpid(pid, &status, WUNTRACED);
-			printf("%d\n",wpid);
-		} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+		pathways = _getPATH(env);
+		while (pathways[i])
+		{
+			full_path = _strcat(pathways[i], command[0]);
+			i++;
+			if (stat(full_path, &st) == 0)
+			{
+				if (execve(full_path, command, env) < 0)
+				{
+					perror(name);
+					free_dp(pathways);
+					free_exit(command);
+				}
+				return;
+			}
+		}
+		msgerror(name, cicles, command);
+		free_dp(pathways);
 	}
-
-	return (1);
 }
 
 
 /**
- * executor - work in progress
- *
- * @args: array of arguments
- *
- * Return: 1 on failure
+ * print_env - A function that prints all enviromental variables.
+ * @env: The pointer to enviromental variables.
+ * Return: Nothing.
  */
-
-
-int executor(char **args, char **env)
+void print_env(char **env)
 {
-	/* int i; */
+	size_t i = 0, len = 0;
 
-	if (args[0] == NULL)
+	while (env[i])
 	{
-		/* An empty command was entered. */
-		printf("An empty command was entered.\n");
-		return (1);
+		len = _strlen(env[i]);
+		write(STDOUT_FILENO, env[i], len);
+		write(STDOUT_FILENO, "\n", 1);
+		i++;
 	}
-	/*
-	 *  for (i = 0; i < lsh_num_builtins(); i++) {
-	 *    if (strcmp(args[0], builtin_str[i]) == 0) {
-	 *      return (*builtin_func[i])(args);
-	 *   }
-	 *  }
-	 */
-	return (launcher(args, env));
 }
+
+
+/**
+ * _getPATH - A function to gets the full value from.
+ * enviromental variable PATH.
+ * @env: The pointer to enviromental variables.
+ * Return: All tokenized pathways for commands.
+ */
+char **_getPATH(char **env)
+{
+	char *pathvalue = NULL, **pathways = NULL;
+	unsigned int i = 0;
+
+	pathvalue = strtok(env[i], "=");
+	while (env[i])
+	{
+		if (_strcmp(pathvalue, "PATH"))
+		{
+			pathvalue = strtok(NULL, "\n");
+			pathways = tokening(pathvalue, ":");
+			return (pathways);
+		}
+		i++;
+		pathvalue = strtok(env[i], "=");
+	}
+	return (NULL);
+}
+
+
+/**
+ * msgerror - A function that prints message not found.
+ * @name: The name of the shell.
+ * @cicles: Number of cicles.
+ * @command: The pointer to tokenized command.
+ * Return: Nothing.
+ */
+void msgerror(char *name, int cicles, char **command)
+{
+	char c;
+
+	c = cicles + '0';
+	write(STDOUT_FILENO, name, _strlen(name));
+	write(STDOUT_FILENO, ": ", 2);
+	write(STDOUT_FILENO, &c, 1);
+	write(STDOUT_FILENO, ": ", 2);
+	write(STDOUT_FILENO, command[0], _strlen(command[0]));
+	write(STDOUT_FILENO, ": not found\n", 12);
+}
+

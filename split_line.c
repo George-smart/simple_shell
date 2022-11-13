@@ -1,42 +1,45 @@
 #include "main.h"
 
-#define TOK_BUFSIZE 64
-#define TOK_DELIM " \t\r\n\a"
-
 /**
- * split_line - splits a line of string into an array of words or tokens
- * @line: the string to be splited
- * Return: a pointer to the created tokens
+ * tokening - A function that split and create a full string command.
+ * @s: The delimiter for strtok.
+ * @buffer: The pointer to input string.
+ * Return: A string with full command.
  */
-char **split_line(char *line)
+char **tokening(char *buffer, const char *s)
 {
-	int bufsize = TOK_BUFSIZE, pos = 0;
-	char *token, **tokens = malloc(bufsize * sizeof(char));
+	char *token = NULL, **commands = NULL;
+	size_t bufsize = 0;
+	int i = 0;
 
-	if (!tokens)
+	if (buffer == NULL)
+		return (NULL);
+
+	bufsize = _strlen(buffer);
+	commands = malloc((bufsize + 1) * sizeof(char *));
+	if (commands == NULL)
 	{
-		fprintf(stderr, "tokens allocation error\n");
+		perror("Unable to allocate buffer");
+		free(buffer);
+		free_dp(commands);
 		exit(EXIT_FAILURE);
 	}
 
-	token = strtok(line, TOK_DELIM);
+	token = strtok(buffer, s);
 	while (token != NULL)
 	{
-		tokens[pos] = token;
-		pos++;
-
-		if (pos >= bufsize)
+		commands[i] = malloc(_strlen(token) + 1);
+		if (commands[i] == NULL)
 		{
-			bufsize += TOK_BUFSIZE;
-			tokens = realloc(tokens, bufsize * sizeof(char));
-			if (!tokens)
-			{
-				fprintf(stderr, "tokens: reallocation error\n");
-				exit(EXIT_FAILURE);
-			}
+			perror("Unable to allocate buffer");
+			free_dp(commands);
+			return (NULL);
 		}
-		token = strtok(NULL, TOK_DELIM);
+		_strcpy(commands[i], token);
+		token = strtok(NULL, s);
+		i++;
 	}
-	tokens[pos] = NULL;
-	return tokens;
+	commands[i] = NULL;
+	return (commands);
 }
+

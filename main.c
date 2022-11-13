@@ -1,36 +1,110 @@
 #include "main.h"
 
 /**
- * main - Entry point of the program
- *
- * @argc: number of arguments passed in
- * @argv: list of arguments passed in
- * @env: list of environment variables
- *
- * Return: 0 on success
+ * main - A function that runs our shell.
+ * @argc: The number of inputed arguments.
+ * @argv: The pointer to array of inputed arguments.
+ * @env: The pointer to array of enviromental variables.
+ * Return: Always 0.
  */
-
-int main(int argc, char *argv[], char *env[])
+int main(int argc, char **argv, char **env)
 {
-	char *line;
-	char **args;
-	int status;
+	char *buffer = NULL, **command = NULL;
+	size_t buf_size = 0;
+	ssize_t chars_readed = 0;
+	int cicles = 0;
+	(void)argc;
 
-	do {
-		printf("$ ");
-		if (argc >= 2)
-			args = argv;
+	while (1)
+	{
+		cicles++;
+		prompt();
+		signal(SIGINT, handle);
+		chars_readed = getline(&buffer, &buf_size, stdin);
+		if (chars_readed == EOF)
+			_EOF(buffer);
+		else if (*buffer == '\n')
+			free(buffer);
 		else
 		{
-			line = read_line_02();
-			args = split_line(line);
+			buffer[_strlen(buffer) - 1] = '\0';
+			command = tokening(buffer, " \0");
+			free(buffer);
+			if (_strcmp(command[0], "exit") != 0)
+				shell_exit(command);
+			else if (_strcmp(command[0], "cd") != 0)
+				change_dir(command[1]);
+			else
+				create_child(command, argv[0], env, cicles);
 		}
-		status = executor(args, env);
+		fflush(stdin);
+		buffer = NULL, buf_size = 0;
+	}
+	if (chars_readed == -1)
+		return (EXIT_FAILURE);
+	return (EXIT_SUCCESS);
+}
 
-		free(line);
-		free(args);
-	} while (status);
 
-	printf("%d %s %s\n", argc, argv[0], env[0]);
-	return 0;
+/**
+ * prompt - A function that prints the prompt
+ * Return: Nothing.
+ */
+void prompt(void)
+{
+	if (isatty(STDIN_FILENO))
+		write(STDOUT_FILENO, "($) ", 3);
+}
+
+
+/**
+ * handle - A function to handle Ctr + C signal.
+ * @signals: The signal to handle.
+ * Return: Nothing.
+ */
+void handle(int signals)
+{
+	(void)signals;
+	write(STDOUT_FILENO, "\n($) ", 4);
+}
+
+
+/**
+ * _EOF - A function that chaecks if buffer is EOF
+ * @buffer: The pointer to the input string.
+ * Return: Nothing
+ */
+void _EOF(char *buffer)
+{
+	if (buffer)
+	{
+		free(buffer);
+		buffer = NULL;
+	}
+
+	if (isatty(STDIN_FILENO))
+		write(STDOUT_FILENO, "\n", 1);
+	free(buffer);
+	exit(EXIT_SUCCESS);
+}
+
+
+/**
+ * shell_exit - A function that exits the shell.
+ * @command: The pointer to tokenized command.
+ * Return: Nothing.
+ */
+void shell_exit(char **command)
+{
+	int sta_tus = 0;
+
+	if (command[1] == NULL)
+	{
+		free_dp(command);
+		exit(EXIT_SUCCESS);
+	}
+
+	sta_tus = _atoi(command[1]);
+	free_dp(command);
+	exit(sta_tus);
 }
