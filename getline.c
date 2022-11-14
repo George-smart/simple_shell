@@ -44,4 +44,3 @@ char *read_line_01(void)
 		}
 	}
 }
-

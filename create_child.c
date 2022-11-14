@@ -56,4 +56,3 @@ int change_dir(const char *path)
 	}
 	return (1);
 }
-
