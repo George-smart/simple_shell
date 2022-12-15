@@ -86,4 +86,4 @@ $
 
 Ekekwe Evaristus George [GitHub](https://github.com/George-smart)
 
-Savwede Godswill Eguolor [GitHub](https://github.com/johnson-wills)
+Savwede Godswill Eguolor [GitHub](https://github.com/Savwede)
